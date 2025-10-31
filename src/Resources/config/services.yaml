@@ -1,0 +1,34 @@
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+
+  # 显式注册服务，确保测试可以访问
+  Tourze\DifyCoreBundle\Service\DifyApiClient:
+    arguments:
+      $httpClient: '@http_client'
+      $asyncInsertService: '@Tourze\DoctrineAsyncInsertBundle\Service\AsyncInsertService'
+      $eventDispatcher: '@event_dispatcher'
+      $cache: '@cache.app'
+      $lockFactory: '@lock.default.factory'
+      $logger: '@monolog.logger.dify_api'
+    public: true
+
+  Tourze\DifyCoreBundle\Service\DifyAppService:
+    autowire: true
+    public: true
+
+  Tourze\DifyCoreBundle\Service\AttributeControllerLoader:
+    autowire: true
+    public: true
+
+  Tourze\DifyCoreBundle\Repository\:
+    resource: '../../Repository/'
+  Tourze\DifyCoreBundle\Service\:
+    resource: '../../Service/'
+  Tourze\DifyCoreBundle\Controller\:
+    resource: '../../Controller/'
+  Tourze\DifyCoreBundle\DependencyInjection\:
+    resource: '../../DependencyInjection/'
+
+
