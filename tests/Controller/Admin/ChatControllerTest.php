@@ -24,8 +24,7 @@ final class ChatControllerTest extends AbstractWebTestCase
 {
     public function testChatRouteThrowsExceptionWhenSettingIdMissing(): void
     {
-        $client = self::createClientWithDatabase();
-        $this->loginAsAdmin($client);
+        $client = self::createAuthenticatedClient();
 
         $client->catchExceptions(false);
         $this->expectException(NotFoundHttpException::class);
@@ -36,8 +35,7 @@ final class ChatControllerTest extends AbstractWebTestCase
 
     public function testChatRouteThrowsExceptionWhenSettingNotFound(): void
     {
-        $client = self::createClientWithDatabase();
-        $this->loginAsAdmin($client);
+        $client = self::createAuthenticatedClient();
 
         $client->catchExceptions(false);
         $this->expectException(NotFoundHttpException::class);
@@ -52,8 +50,7 @@ final class ChatControllerTest extends AbstractWebTestCase
     #[DataProvider('provideInvalidSettingIds')]
     public function testChatRouteWithInvalidSettingIds(array $queryParams): void
     {
-        $client = self::createClientWithDatabase();
-        $this->loginAsAdmin($client);
+        $client = self::createAuthenticatedClient();
 
         $client->catchExceptions(false);
         $this->expectException(NotFoundHttpException::class);
@@ -74,8 +71,7 @@ final class ChatControllerTest extends AbstractWebTestCase
 
     public function testChatRouteWithMissingSettingId(): void
     {
-        $client = self::createClientWithDatabase();
-        $this->loginAsAdmin($client);
+        $client = self::createAuthenticatedClient();
 
         $client->catchExceptions(false);
         $this->expectException(NotFoundHttpException::class);
@@ -86,8 +82,7 @@ final class ChatControllerTest extends AbstractWebTestCase
 
     public function testChatRouteWithEmptySettingId(): void
     {
-        $client = self::createClientWithDatabase();
-        $this->loginAsAdmin($client);
+        $client = self::createAuthenticatedClient();
 
         $client->catchExceptions(false);
         $this->expectException(NotFoundHttpException::class);
@@ -113,8 +108,7 @@ final class ChatControllerTest extends AbstractWebTestCase
     #[DataProvider('provideNotAllowedMethods')]
     public function testMethodNotAllowed(string $method): void
     {
-        $client = self::createClientWithDatabase();
-        $this->loginAsAdmin($client);
+        $client = self::createAuthenticatedClient();
 
         $client->catchExceptions(false);
         $this->expectException(MethodNotAllowedHttpException::class);
