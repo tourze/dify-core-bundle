@@ -102,9 +102,6 @@ final class ChatControllerTest extends AbstractWebTestCase
         $client->request('GET', '/admin/dify/chat', ['settingId' => '123']);
     }
 
-    /**
-     * @param string $method
-     */
     #[DataProvider('provideNotAllowedMethods')]
     public function testMethodNotAllowed(string $method): void
     {
@@ -114,5 +111,16 @@ final class ChatControllerTest extends AbstractWebTestCase
         $this->expectException(MethodNotAllowedHttpException::class);
 
         $client->request($method, '/admin/dify/chat', ['settingId' => '123']);
+    }
+
+    protected function createAuthenticatedClient(): \Symfony\Bundle\FrameworkBundle\KernelBrowser
+    {
+        $client = self::createClientWithDatabase();
+
+        // 创建具有管理员权限的用户
+        $user = $this->createUser('admin', 'password', ['ROLE_ADMIN']);
+        $client->loginUser($user);
+
+        return $client;
     }
 }
