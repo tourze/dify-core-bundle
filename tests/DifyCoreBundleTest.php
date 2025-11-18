@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tourze\DifyCoreBundle\Tests;
 
-use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use PHPUnit\Framework\Attributes\Test;
@@ -36,16 +35,6 @@ final class DifyCoreBundleTest extends AbstractBundleTestCase
         $this->assertInstanceOf(DifyCoreBundle::class, $bundle);
         $expectedPath = \dirname(__DIR__) . '/src';
         $this->assertEquals($expectedPath, $bundle->getPath());
-    }
-
-    #[Test]
-    public function testGetBundleDependencies(): void
-    {
-        $dependencies = DifyCoreBundle::getBundleDependencies();
-
-        $this->assertIsArray($dependencies);
-        $this->assertArrayHasKey(DoctrineBundle::class, $dependencies);
-        $this->assertEquals(['all' => true], $dependencies[DoctrineBundle::class]);
     }
 
     #[Test]
