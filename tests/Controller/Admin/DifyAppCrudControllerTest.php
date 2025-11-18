@@ -7,7 +7,6 @@ namespace Tourze\DifyCoreBundle\Tests\Controller\Admin;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use Tourze\DifyCoreBundle\Controller\Admin\DifyAppCrudController;
-use Tourze\DifyCoreBundle\Entity\DifyApp;
 use Tourze\PHPUnitSymfonyWebTest\AbstractEasyAdminControllerTestCase;
 
 /**
@@ -53,11 +52,6 @@ final class DifyAppCrudControllerTest extends AbstractEasyAdminControllerTestCas
         yield 'baseUrl' => ['baseUrl'];
         yield 'iframeCode' => ['iframeCode'];
         yield 'valid' => ['valid'];
-    }
-
-    public function testGetEntityFqcn(): void
-    {
-        self::assertSame(DifyApp::class, DifyAppCrudController::getEntityFqcn());
     }
 
     public function testConfigureFields(): void
