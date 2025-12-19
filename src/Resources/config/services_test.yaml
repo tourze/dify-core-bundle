@@ -7,3 +7,26 @@ services:
 
   Tourze\DifyCoreBundle\DataFixtures\:
     resource: '../../DataFixtures/'
+    tags: ['doctrine.fixture.orm']
+
+  # Test environment: MockHttpClient for network isolation
+  test.dify_core.MockHttpClient:
+    class: Symfony\Component\HttpClient\MockHttpClient
+    public: true
+
+  # Test alias for MockHttpClient class
+  Test.MockHttpClient:
+    alias: test.dify_core.MockHttpClient
+    public: true
+
+  # Test alias for HttpClientInterface
+  Test.HttpClientInterface:
+    alias: test.dify_core.MockHttpClient
+    public: true
+
+  # Test service for DifyApiClient with MockHttpClient
+  Test.DifyApiClient:
+    class: Tourze\DifyCoreBundle\Service\DifyApiClient
+    arguments:
+      $httpClient: '@test.dify_core.MockHttpClient'
+    public: true

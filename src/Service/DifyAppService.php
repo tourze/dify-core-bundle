@@ -7,7 +7,7 @@ namespace Tourze\DifyCoreBundle\Service;
 use Tourze\DifyCoreBundle\Entity\DifyApp;
 use Tourze\DifyCoreBundle\Repository\DifyAppRepository;
 
-class DifyAppService
+final class DifyAppService
 {
     public function __construct(
         private readonly DifyAppRepository $difyAppRepository,

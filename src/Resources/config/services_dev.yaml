@@ -7,3 +7,4 @@ services:
 
   Tourze\DifyCoreBundle\DataFixtures\:
     resource: '../../DataFixtures/'
+    tags: ['doctrine.fixture.orm']

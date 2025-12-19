@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace Tourze\DifyCoreBundle\Tests\Service;
 
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\MockObject\MockObject;
-use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use Tourze\DifyCoreBundle\Entity\DifyApp;
-use Tourze\DifyCoreBundle\Repository\DifyAppRepository;
 use Tourze\DifyCoreBundle\Service\DifyAppService;
 
 /**
@@ -16,271 +14,255 @@ use Tourze\DifyCoreBundle\Service\DifyAppService;
  * @internal
  */
 #[CoversClass(DifyAppService::class)]
-final class DifyAppServiceTest extends TestCase
+#[RunTestsInSeparateProcesses]
+final class DifyAppServiceTest extends \Tourze\PHPUnitSymfonyKernelTest\AbstractIntegrationTestCase
 {
     private DifyAppService $difyAppService;
 
-    private DifyAppRepository&MockObject $difyAppRepository;
-
-    protected function setUp(): void
+    protected function onSetUp(): void
     {
-        $this->difyAppRepository = $this->createMock(DifyAppRepository::class);
-        $this->difyAppService = new DifyAppService($this->difyAppRepository);
+        $this->difyAppService = self::getService(DifyAppService::class);
     }
 
-    public function testFindByIdWithExistingApp(): void
+    public function testServiceIsRegistered(): void
     {
-        $app = $this->createTestApp('test-app-1', 'Test API Key 1', 'https://api.dify.test');
-        $appId = 'test-id-123';
-
-        $this->difyAppRepository
-            ->expects($this->once())
-            ->method('find')
-            ->with($appId)
-            ->willReturn($app)
-        ;
-
-        $result = $this->difyAppService->findById($appId);
-
-        $this->assertInstanceOf(DifyApp::class, $result);
-        $this->assertEquals('test-app-1', $result->getName());
+        $this->assertInstanceOf(DifyAppService::class, $this->difyAppService);
     }
 
-    public function testFindByIdWithNonExistentApp(): void
+    public function testFindById(): void
     {
-        $this->difyAppRepository
-            ->expects($this->once())
-            ->method('find')
-            ->with('non-existent-id')
-            ->willReturn(null)
-        ;
+        // 创建测试数据
+        $app = new DifyApp();
+        $app->setName('Test App');
+        $app->setApiKey('test-key');
+        $app->setBaseUrl('https://test.com');
+        $app->setValid(true);
 
-        $result = $this->difyAppService->findById('non-existent-id');
+        $this->difyAppService->save($app);
 
-        $this->assertNull($result);
+        // 测试查找存在的应用
+        $foundApp = $this->difyAppService->findById($app->getId());
+        $this->assertNotNull($foundApp);
+        $this->assertEquals('Test App', $foundApp->getName());
+
+        // 测试查找不存在的应用
+        $notFoundApp = $this->difyAppService->findById('non-existent-id');
+        $this->assertNull($notFoundApp);
     }
 
-    public function testFindByNameWithExistingApp(): void
+    public function testFindByName(): void
     {
-        $app = $this->createTestApp('test-app-name', 'Test API Key', 'https://api.dify.test');
+        // 创建测试数据
+        $app = new DifyApp();
+        $app->setName('Unique Test App');
+        $app->setApiKey('unique-key');
+        $app->setBaseUrl('https://unique.com');
+        $app->setValid(true);
 
-        $this->difyAppRepository
-            ->expects($this->once())
-            ->method('findByName')
-            ->with('test-app-name')
-            ->willReturn($app)
-        ;
+        $this->difyAppService->save($app);
 
-        $result = $this->difyAppService->findByName('test-app-name');
+        // 测试查找存在的应用
+        $foundApp = $this->difyAppService->findByName('Unique Test App');
+        $this->assertNotNull($foundApp);
+        $this->assertEquals($app->getId(), $foundApp->getId());
 
-        $this->assertInstanceOf(DifyApp::class, $result);
-        $this->assertEquals('test-app-name', $result->getName());
-    }
-
-    public function testFindByNameWithNonExistentApp(): void
-    {
-        $this->difyAppRepository
-            ->expects($this->once())
-            ->method('findByName')
-            ->with('non-existent-name')
-            ->willReturn(null)
-        ;
-
-        $result = $this->difyAppService->findByName('non-existent-name');
-
-        $this->assertNull($result);
+        // 测试查找不存在的应用
+        $notFoundApp = $this->difyAppService->findByName('Non-existent App');
+        $this->assertNull($notFoundApp);
     }
 
     public function testFindValidApps(): void
     {
-        $validApp1 = $this->createTestApp('valid-app-1', 'API Key 1', 'https://api.dify.test', true);
-        $validApp2 = $this->createTestApp('valid-app-2', 'API Key 2', 'https://api.dify.test', true);
-        $validApps = [$validApp1, $validApp2];
+        // 不需要手动清理，测试会自动隔离
 
-        $this->difyAppRepository
-            ->expects($this->once())
-            ->method('findBy')
-            ->with(['valid' => true])
-            ->willReturn($validApps)
-        ;
+        // 获取初始有效应用数量
+        $initialValidApps = $this->difyAppService->findValidApps();
+        $initialCount = count($initialValidApps);
 
-        $result = $this->difyAppService->findValidApps();
+        // 创建测试数据 - 有效应用
+        $validApp1 = new DifyApp();
+        $validApp1->setName('Valid App 1');
+        $validApp1->setApiKey('valid-key-1');
+        $validApp1->setBaseUrl('https://valid1.com');
+        $validApp1->setValid(true);
 
-        $this->assertIsArray($result);
-        $this->assertCount(2, $result);
-        $this->assertEquals($validApps, $result);
+        $validApp2 = new DifyApp();
+        $validApp2->setName('Valid App 2');
+        $validApp2->setApiKey('valid-key-2');
+        $validApp2->setBaseUrl('https://valid2.com');
+        $validApp2->setValid(true);
+
+        // 创建测试数据 - 无效应用
+        $invalidApp = new DifyApp();
+        $invalidApp->setName('Invalid App');
+        $invalidApp->setApiKey('invalid-key');
+        $invalidApp->setBaseUrl('https://invalid.com');
+        $invalidApp->setValid(false);
+
+        $this->difyAppService->save($validApp1);
+        $this->difyAppService->save($validApp2);
+        $this->difyAppService->save($invalidApp);
+
+        // 测试查找有效应用
+        $validApps = $this->difyAppService->findValidApps();
+        $this->assertCount($initialCount + 2, $validApps);
+
+        $validAppNames = array_map(fn($app) => $app->getName(), $validApps);
+        $this->assertContains('Valid App 1', $validAppNames);
+        $this->assertContains('Valid App 2', $validAppNames);
+        $this->assertNotContains('Invalid App', $validAppNames);
     }
 
-    public function testFindValidAppsWithNoValidApps(): void
+    public function testGetAppsToSyncWithNullAppId(): void
     {
-        $this->difyAppRepository
-            ->expects($this->once())
-            ->method('findBy')
-            ->with(['valid' => true])
-            ->willReturn([])
-        ;
+        // 不需要手动清理，测试会自动隔离
 
-        $result = $this->difyAppService->findValidApps();
+        // 获取初始有效应用数量
+        $initialValidApps = $this->difyAppService->getAppsToSync();
+        $initialCount = count($initialValidApps);
 
-        $this->assertIsArray($result);
-        $this->assertEmpty($result);
+        // 创建测试数据
+        $validApp = new DifyApp();
+        $validApp->setName('Valid App For Sync');
+        $validApp->setApiKey('sync-key');
+        $validApp->setBaseUrl('https://sync.com');
+        $validApp->setValid(true);
+
+        $invalidApp = new DifyApp();
+        $invalidApp->setName('Invalid App For Sync');
+        $invalidApp->setApiKey('invalid-sync-key');
+        $invalidApp->setBaseUrl('https://invalid-sync.com');
+        $invalidApp->setValid(false);
+
+        $this->difyAppService->save($validApp);
+        $this->difyAppService->save($invalidApp);
+
+        // 测试获取所有有效应用进行同步
+        $appsToSync = $this->difyAppService->getAppsToSync();
+        $this->assertCount($initialCount + 1, $appsToSync);
+
+        $appNames = array_map(fn($app) => $app->getName(), $appsToSync);
+        $this->assertContains('Valid App For Sync', $appNames);
+        $this->assertNotContains('Invalid App For Sync', $appNames);
     }
 
     public function testGetAppsToSyncWithSpecificAppId(): void
     {
-        $app = $this->createTestApp('sync-app', 'API Key', 'https://api.dify.test', true);
-        $appId = 'test-app-id';
+        // 创建测试数据
+        $validApp = new DifyApp();
+        $validApp->setName('Valid App Specific');
+        $validApp->setApiKey('specific-key');
+        $validApp->setBaseUrl('https://specific.com');
+        $validApp->setValid(true);
 
-        $this->difyAppRepository
-            ->expects($this->once())
-            ->method('find')
-            ->with($appId)
-            ->willReturn($app)
-        ;
+        $invalidApp = new DifyApp();
+        $invalidApp->setName('Invalid App Specific');
+        $invalidApp->setApiKey('invalid-specific-key');
+        $invalidApp->setBaseUrl('https://invalid-specific.com');
+        $invalidApp->setValid(false);
 
-        $result = $this->difyAppService->getAppsToSync($appId);
+        $this->difyAppService->save($validApp);
+        $this->difyAppService->save($invalidApp);
 
-        $this->assertIsArray($result);
-        $this->assertCount(1, $result);
-        $this->assertEquals($app, $result[0]);
+        // 测试获取特定的有效应用进行同步
+        $appsToSync = $this->difyAppService->getAppsToSync($validApp->getId());
+        $this->assertCount(1, $appsToSync);
+        $this->assertEquals('Valid App Specific', $appsToSync[0]->getName());
+
+        // 测试获取特定的无效应用进行同步
+        $appsToSync = $this->difyAppService->getAppsToSync($invalidApp->getId());
+        $this->assertCount(0, $appsToSync);
+
+        // 测试获取不存在的应用进行同步
+        $appsToSync = $this->difyAppService->getAppsToSync('non-existent-id');
+        $this->assertCount(0, $appsToSync);
     }
 
-    public function testGetAppsToSyncWithNonExistentAppId(): void
+    public function testSave(): void
     {
-        $this->difyAppRepository
-            ->expects($this->once())
-            ->method('find')
-            ->with('non-existent-id')
-            ->willReturn(null)
-        ;
+        $app = new DifyApp();
+        $app->setName('Save Test App');
+        $app->setApiKey('save-key');
+        $app->setBaseUrl('https://save.com');
+        $app->setValid(true);
 
-        $result = $this->difyAppService->getAppsToSync('non-existent-id');
+        // 测试保存新实体
+        $this->difyAppService->save($app);
 
-        $this->assertIsArray($result);
-        $this->assertEmpty($result);
-    }
+        // 验证实体已保存
+        $this->assertNotNull($app->getId());
 
-    public function testGetAppsToSyncWithInvalidApp(): void
-    {
-        $app = $this->createTestApp('invalid-sync-app', 'API Key', 'https://api.dify.test', false);
-        $appId = 'invalid-app-id';
-
-        $this->difyAppRepository
-            ->expects($this->once())
-            ->method('find')
-            ->with($appId)
-            ->willReturn($app)
-        ;
-
-        $result = $this->difyAppService->getAppsToSync($appId);
-
-        $this->assertIsArray($result);
-        $this->assertEmpty($result);
-    }
-
-    public function testGetAppsToSyncWithValidAppButNullIsValid(): void
-    {
-        $app = $this->createTestApp('null-valid-app', 'API Key', 'https://api.dify.test');
-        $app->setValid(null);
-        $appId = 'null-valid-app-id';
-
-        $this->difyAppRepository
-            ->expects($this->once())
-            ->method('find')
-            ->with($appId)
-            ->willReturn($app)
-        ;
-
-        $result = $this->difyAppService->getAppsToSync($appId);
-
-        $this->assertIsArray($result);
-        $this->assertEmpty($result);
-    }
-
-    public function testGetAppsToSyncWithoutAppId(): void
-    {
-        $validApp1 = $this->createTestApp('valid-sync-1', 'API Key 1', 'https://api.dify.test', true);
-        $validApp2 = $this->createTestApp('valid-sync-2', 'API Key 2', 'https://api.dify.test', true);
-        $validApps = [$validApp1, $validApp2];
-
-        $this->difyAppRepository
-            ->expects($this->once())
-            ->method('findBy')
-            ->with(['valid' => true])
-            ->willReturn($validApps)
-        ;
-
-        $result = $this->difyAppService->getAppsToSync();
-
-        $this->assertIsArray($result);
-        $this->assertCount(2, $result);
-        $this->assertEquals($validApps, $result);
-    }
-
-    public function testSaveWithFlush(): void
-    {
-        $app = $this->createTestApp('save-test-app', 'Save API Key', 'https://api.dify.test');
-
-        $this->difyAppRepository
-            ->expects($this->once())
-            ->method('save')
-            ->with($app, true)
-        ;
-
-        $this->difyAppService->save($app, true);
+        $savedApp = $this->difyAppService->findById($app->getId());
+        $this->assertNotNull($savedApp);
+        $this->assertEquals('Save Test App', $savedApp->getName());
     }
 
     public function testSaveWithoutFlush(): void
     {
-        $app = $this->createTestApp('save-no-flush-app', 'No Flush API Key', 'https://api.dify.test');
+        $app = new DifyApp();
+        $app->setName('Save No Flush Test App');
+        $app->setApiKey('save-no-flush-key');
+        $app->setBaseUrl('https://save-no-flush.com');
+        $app->setValid(true);
 
-        $this->difyAppRepository
-            ->expects($this->once())
-            ->method('save')
-            ->with($app, false)
-        ;
-
+        // 测试保存但不立即刷新
         $this->difyAppService->save($app, false);
+
+        // 手动刷新以验证数据已保存
+        $entityManager = self::getEntityManager();
+        $entityManager->flush();
+
+        // 验证实体已保存
+        $this->assertNotNull($app->getId());
     }
 
-    public function testRemoveWithFlush(): void
+    public function testRemove(): void
     {
-        $app = $this->createTestApp('remove-test-app', 'Remove API Key', 'https://api.dify.test');
+        $app = new DifyApp();
+        $app->setName('Remove Test App');
+        $app->setApiKey('remove-key');
+        $app->setBaseUrl('https://remove.com');
+        $app->setValid(true);
 
-        $this->difyAppRepository
-            ->expects($this->once())
-            ->method('remove')
-            ->with($app, true)
-        ;
+        // 先保存实体
+        $this->difyAppService->save($app);
+        $appId = $app->getId();
+        $this->assertNotNull($appId);
 
-        $this->difyAppService->remove($app, true);
+        // 验证实体存在
+        $existingApp = $this->difyAppService->findById($appId);
+        $this->assertNotNull($existingApp);
+
+        // 测试删除实体
+        $this->difyAppService->remove($app);
+
+        // 验证实体已删除
+        $deletedApp = $this->difyAppService->findById($appId);
+        $this->assertNull($deletedApp);
     }
 
     public function testRemoveWithoutFlush(): void
     {
-        $app = $this->createTestApp('remove-no-flush-app', 'Remove No Flush API Key', 'https://api.dify.test');
-
-        $this->difyAppRepository
-            ->expects($this->once())
-            ->method('remove')
-            ->with($app, false)
-        ;
-
-        $this->difyAppService->remove($app, false);
-    }
-
-    /**
-     * 创建测试用的 DifyApp 实体
-     */
-    private function createTestApp(string $name, string $apiKey, string $baseUrl, ?bool $valid = true): DifyApp
-    {
         $app = new DifyApp();
-        $app->setName($name);
-        $app->setApiKey($apiKey);
-        $app->setBaseUrl($baseUrl);
-        $app->setValid($valid);
-        $app->setDescription('Test description for ' . $name);
+        $app->setName('Remove No Flush Test App');
+        $app->setApiKey('remove-no-flush-key');
+        $app->setBaseUrl('https://remove-no-flush.com');
+        $app->setValid(true);
 
-        return $app;
+        // 先保存实体
+        $this->difyAppService->save($app);
+        $appId = $app->getId();
+        $this->assertNotNull($appId);
+
+        // 测试删除但不立即刷新
+        $this->difyAppService->remove($app, false);
+
+        // 手动刷新以验证删除操作
+        $entityManager = self::getEntityManager();
+        $entityManager->flush();
+
+        // 验证实体已删除
+        $deletedApp = $this->difyAppService->findById($appId);
+        $this->assertNull($deletedApp);
     }
 }

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tourze\DifyCoreBundle\Service;
 
-use HttpClientBundle\Client\ApiClient;
 use HttpClientBundle\Request\RequestInterface;
 use Monolog\Attribute\WithMonologChannel;
 use Psr\Log\LoggerInterface;
@@ -17,7 +16,6 @@ use Symfony\Contracts\HttpClient\ResponseInterface;
 use Tourze\DifyCoreBundle\Entity\DifyApp;
 use Tourze\DifyCoreBundle\Exception\DifyApiException;
 use Tourze\DifyCoreBundle\Exception\InvalidDifyConfigException;
-use Tourze\DoctrineAsyncInsertBundle\Service\AsyncInsertService;
 
 /**
  * Dify API 客户端
@@ -27,13 +25,12 @@ use Tourze\DoctrineAsyncInsertBundle\Service\AsyncInsertService;
  * $response = $this->difyApiClient->request($request);
  */
 #[WithMonologChannel(channel: 'dify_api')]
-class DifyApiClient extends ApiClient
+final class DifyApiClient
 {
     private ?DifyApp $currentApp = null;
 
     public function __construct(
         private readonly HttpClientInterface $httpClient,
-        private readonly AsyncInsertService $asyncInsertService,
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly ?CacheInterface $cache = null,
         private readonly ?LockFactory $lockFactory = null,
@@ -62,7 +59,12 @@ class DifyApiClient extends ApiClient
             throw new InvalidDifyConfigException('请先通过 setApp() 设置 Dify 应用');
         }
 
-        return parent::request($request);
+        $method = $this->getRequestMethod($request);
+        $url = $this->getRequestUrl($request);
+        $options = $this->getRequestOptions($request) ?? [];
+
+        $response = $this->httpClient->request($method, $url, $options);
+        return $this->formatResponse($request, $response);
     }
 
     protected function getLogger(): LoggerInterface
@@ -90,10 +92,11 @@ class DifyApiClient extends ApiClient
         return $this->eventDispatcher;
     }
 
-    protected function getAsyncInsertService(): AsyncInsertService
-    {
-        return $this->asyncInsertService;
-    }
+    // 注意：由于我们不再继承 ApiClient，这个方法不再需要
+    // private function getAsyncInsertService(): AsyncInsertService
+    // {
+    //     // 不再需要 AsyncInsertService 依赖
+    // }
 
     protected function getRequestUrl(RequestInterface $request): string
     {
